@@ -36,3 +36,8 @@ export const getPaginationMeta = (page: number, count: number, limit: number) =>
 }
 
 export const currentTime = () => Math.round(new Date().getTime() / 1000)
+
+export const currentDate = () => {
+	const d = new Date();
+	return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}

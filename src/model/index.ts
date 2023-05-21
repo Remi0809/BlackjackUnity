@@ -1,14 +1,14 @@
 import { MongoClient } from 'mongodb';
 
 import config from '../config.json'
-import { currentTime, setlog } from '../helper';
+import { currentTime, currentDate, setlog } from '../helper';
 
 const client = new MongoClient('mongodb://127.0.0.1:27017');
 const db = client.db(config.database);
 export const DEFAULT_GAMEID = 1
 
 export const DUsers = db.collection<SchemaUser>('users');
-export const DGame = db.collection<SchemaGame>('game');
+export const DRounds = db.collection<SchemaRoundHistory>('rounds');
 export const DHistories = db.collection<SchemaHistory>('histories');
 
 const lastIds = {
@@ -27,6 +27,7 @@ export const connect = async () => {
         lastIds.lastHistoryId = d?.[0]?.max || 0
         const d1 = await DUsers.aggregate([{ $group: { _id: null, max: { $max: "$_id" } } }]).toArray();
         lastIds.lastUserId = d1?.[0]?.max || 0
+
         return true
     } catch (error) {
         setlog('mongodb-initialization', error)
@@ -35,44 +36,45 @@ export const connect = async () => {
 }
 
 export const getBettingAmounts = async () => {
-    try {
-        const d = await DGame.findOne({ _id: DEFAULT_GAMEID })
-        const minBetAmount = d?.minBetAmount || config.betting.min;
-        const maxBetAmount = d?.maxBetAmount || config.betting.max;
-        return { minBetAmount, maxBetAmount }
-    } catch (error) {
-        setlog('addHistory', error)
-        return { minBetAmount: config.betting.min, maxBetAmount: config.betting.max }
-    }
-
+    return { minBetAmount: config.betting.min, maxBetAmount: config.betting.max }
 }
-export const addHistory = async (name: string, betAmount: number, cashoutAt: number, cashouted: boolean) => {
+
+export const addHistory = async (roundId: number, userName: string, betAmount: number, betScores: Array<number>) => {
     try {
         await DHistories.insertOne({
             _id: ++lastIds.lastHistoryId,
-            name,
+            roundId,
+            userName,
             betAmount,
-            cashoutAt,
-            cashouted,
+            betScores,
+            winAmount: 0,
             date: currentTime()
-        })
-        return true
+        });
+        return true;
     } catch (error) {
-        setlog('addHistory', error)
-        return false
+        setlog('addHistory', error);
+        return false;
     }
 }
 
-export const addUser = async (name: string, balance: number, img: string) => {
+export const updateHistory = async (roundId: number, userName: string, winAmount: number) => {
     try {
-        const now = currentTime()
+        await DHistories.updateOne({ $and: [{ roundId: roundId }, { userName: userName }] }, { $set: { winAmount } });
+        return true;
+    } catch (err) {
+        setlog('updateHistory', err);
+        return false;
+    }
+}
+
+export const addUser = async (name: string, user_id: string, balance: number, img: string) => {
+    try {
         await DUsers.insertOne({
             _id: ++lastIds.lastUserId,
+            userId: user_id,
             name,
             balance,
             img,
-            updated: now,
-            created: now
         })
         return true
     } catch (error) {
@@ -81,9 +83,9 @@ export const addUser = async (name: string, balance: number, img: string) => {
     }
 }
 
-export const updateUserBalance = async (name: string, balance: number) => {
+export const updateUserBalance = async (userId: string, balance: number) => {
     try {
-        await DUsers.updateOne({ name }, { $set: { balance } })
+        await DUsers.updateOne({ userId }, { $set: { balance } })
         return true
     } catch (error) {
         setlog('updateUserBalance', error)
@@ -91,4 +93,26 @@ export const updateUserBalance = async (name: string, balance: number) => {
     }
 }
 
+export const insertNewRound = async (betId: number) => {
+    try {
+        await DRounds.insertOne({
+            _id: betId,
+            roundResult: 0,
+            date: currentDate()
+        });
+        return true;
+    } catch (err) {
+        setlog('insetNewRound', err);
+        return false;
+    }
+}
 
+export const updateRound = async (betId: number, roundResult: number) => {
+    try {
+        await DRounds.updateOne({ _id: betId }, { $set: { roundResult } });
+        return true;
+    } catch (err) {
+        setlog('updateRound', err);
+        return false;
+    }
+}

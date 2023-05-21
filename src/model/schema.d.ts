@@ -1,23 +1,23 @@
 declare interface SchemaUser {
     _id:          number
-    name: string
-    balance: number
-    img: string
-    updated: number
-    created: number
-}
-
-declare interface SchemaGame {
-    _id:          number
-    minBetAmount: number
-    maxBetAmount: number
+    userId:       string
+    name:         string
+    balance:      number
+    img:          string
 }
 
 declare interface SchemaHistory {
-    _id: number
-    name: string
-    betAmount: number
-    cashoutAt: number
-    cashouted: boolean
-    date: number
+    _id:          number
+    roundId:      number
+    userName:     string
+    betAmount:    number
+    winAmount:    number
+    betScores:    Array<number>
+    date:         number
+}
+
+declare interface SchemaRoundHistory {
+    _id:          number
+    roundResult:  number
+    date:         string
 }

@@ -1,8 +1,8 @@
 {
   "name": "unity-socketio-testserver",
   "version": "1.0.0",
-  "author": "DasPeTe (daspetemail@gmail.com)",
-  "description": "The SocketIO testserver for the unity3d socketio package",
+  "author": "Remi Mizogami (remimizogami@gmail.com)",
+  "description": "the blackgame blackend for the unity3d socketio package",
   "main": "server.js",
   "scripts": {
     "start": "nodemon ./src/app.ts",
